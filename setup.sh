@@ -6,7 +6,8 @@ DB_USER=dbuser
 DB_PASS=django
 DB_NAME=djangodb
 
-PROJECT_REPOSITORY=https://github.com/maxchv/DemoDjangoProject
+read -p "Enter valid path to git repository: " repo
+PROJECT_REPOSITORY=${repo}
 DJANGO_PROJECT=`basename ${PROJECT_REPOSITORY}`
 
 IP=`curl http://checkip.amazonaws.com`
@@ -15,7 +16,7 @@ export DJANGO_SUPERUSER_USERNAME=admin
 export DJANGO_SUPERUSER_PASSWORD=admin
 export DJANGO_SUPERUSER_EMAIL=admin@mail.com
 
-DEBUG=true
+DEBUG=false
 askContinue() {
     if [ "${DEBUG}" == "true" ];
     then
