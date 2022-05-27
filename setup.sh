@@ -117,8 +117,8 @@ sudo systemctl status gunicorn
 askContinue
 
 echo "Step 5: Setup nginx"
-#sudo cp -f ./configs/myproject  /etc/nginx/sites-available/myproject
-sudo cat<<EOF >> /etc/nginx/sites-available/myproject
+
+sudo cat<<EOF >> myproject
 server {
     listen 80;
     server_name ${IP};
@@ -134,6 +134,8 @@ server {
     }
 }
 EOF
+sudo cp -f ./myproject  /etc/nginx/sites-available/myproject
+rm ./myproject
 sudo ln -s /etc/nginx/sites-available/myproject /etc/nginx/sites-enabled
 sudo nginx -t
 sudo systemctl restart nginx
