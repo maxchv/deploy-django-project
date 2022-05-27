@@ -60,6 +60,7 @@ python3 -m venv venv
 pip install -r requirements.txt
 python manage.py makemigrations
 python manage.py migrate
+sudo chmod a+w /var/www/html
 python manage.py collectstatic
 python manage.py createsuperuser --noinput
 cd ${HOME}
@@ -69,8 +70,7 @@ askContinue
 echo "Step 4: Setup gunicorn"
 # pip install gunicorn
 # gunicorn -w 3 --bind 0.0.0.0:8000 djangoproject.wsgi
-# sudo cp -f ./configs/gunicorn.socket  /etc/systemd/system/gunicorn.socket
-sudo cat<<EOF >> /etc/systemd/system/gunicorn.socket
+cat<<EOF >> gunicorn.socket
 [Unit]
 Description=gunicorn socket
 
@@ -80,8 +80,9 @@ ListenStream=/run/gunicorn.sock
 [Install]
 WantedBy=sockets.target
 EOF
-#sudo cp -f ./configs/gunicorn.service /etc/systemd/system/gunicorn.service
-sudo cat<<EOF >> /etc/systemd/system/gunicorn.service
+sudo cp -f ./gunicorn.socket  /etc/systemd/system/gunicorn.socket
+rm ./gunicorn.socket
+cat<<EOF >> gunicorn.service
 [Unit]
 Description=gunicorn daemon
 Requires=gunicorn.socket
@@ -100,6 +101,8 @@ ExecStart=${HOME}/${DJANGO_PROJECT}/venv/bin/gunicorn \
 [Install]
 WantedBy=multi-user.target
 EOF
+sudo cp -f ./gunicorn.service /etc/systemd/system/gunicorn.service
+rm ./gunicorn.service
 sudo systemctl start gunicorn.socket
 sudo systemctl enable gunicorn.socket
 sudo systemctl status gunicorn.socket
