@@ -16,13 +16,16 @@ export DJANGO_SUPERUSER_PASSWORD=admin
 export DJANGO_SUPERUSER_EMAIL=admin@mail.com
 
 DEBUG=true
-
-if [${DEBUG} == "true"] then
-    read -p "Next step [yes|no]? " next
-    if [$next != "yes"] then 
-        exit
+askContinue() {
+    if [ "${DEBUG}" == "true" ] then
+        read -p "Next step [yes|no]? " next
+        if [ "$next" != "yes" ] then 
+            exit
+        fi
     fi
-fi
+}
+
+askContinue
 
 echo "Step 0: Update and install packages"
 sudo apt update
@@ -45,12 +48,7 @@ ALTER ROLE ${DB_USER} SET timezone TO 'UTC';
 GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};
 EOF
 
-if [${DEBUG} == "true"] then
-    read -p "Next step [yes|no]? " next
-    if [$next != "yes"] then 
-        exit
-    fi
-fi
+askContinue
 
 echo "Step 2: Clone project from git"
 cd ${HOME}
@@ -58,12 +56,7 @@ echo "Clean old project"
 rm -r ${DJANGO_PROJECT}
 git clone ${PROJECT_REPOSITORY}
 
-if [${DEBUG} == "true"] then
-    read -p "Next step [yes|no]? " next
-    if [$next != "yes"] then 
-        exit
-    fi
-fi
+askContinue
 
 echo "Step 3: Create and activate virtual environment, install requered packages, migrate database"
 cd ${DJANGO_PROJECT}
@@ -76,12 +69,7 @@ python manage.py collectstatic
 python manage.py createsuperuser --noinput
 cd ${HOME}
 
-if [${DEBUG} == "true"] then
-    read -p "Next step [yes|no]? " next
-    if [$next != "yes"] then 
-        exit
-    fi
-fi
+askContinue
 
 echo "Step 4: Setup gunicorn"
 # pip install gunicorn
@@ -128,12 +116,7 @@ sudo systemctl status gunicorn
 curl --unix-socket /run/gunicorn.sock localhost
 sudo systemctl status gunicorn
 
-if [${DEBUG} == "true"] then
-    read -p "Next step [yes|no]? " next
-    if [$next != "yes"] then 
-        exit
-    fi
-fi
+askContinue
 
 echo "Step 5: Setup nginx"
 #sudo cp -f ./configs/myproject  /etc/nginx/sites-available/myproject
