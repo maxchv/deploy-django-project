@@ -10,3 +10,11 @@ $ Enter valid path to git repository: https://github.com/maxchv/DemoDjangoProjec
 ```
 
 ![Screen record installation](screen/install.gif)
+
+## Django admin
+
+By default superuser has username `admin` and password `admin`
+
+## Database config
+
+By default database has user `dbuser` with password `django` and he has own database `djangodb`. 
