@@ -29,7 +29,7 @@ You need to set `STATIC_ROOT` contstan in `settings.py` to `'/var/www/html/stati
 STATIC_ROOT = '/var/www/html/static'
 ```
 
-Also you need to setup database configuration for postres:
+Also you need to setup database configuration for postgres:
 
 ```python
 DATABASES= {
@@ -44,7 +44,7 @@ DATABASES= {
 }
 ```
 
-And constant `ALLOWED_HOSTS` set allow to all hosts:
+And constant `ALLOWED_HOSTS` set to allow access from any hosts:
 
 ```python
 ALLOWED_HOSTS = ['*']
