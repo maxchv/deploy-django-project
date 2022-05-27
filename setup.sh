@@ -17,9 +17,9 @@ export DJANGO_SUPERUSER_EMAIL=admin@mail.com
 
 DEBUG=true
 
-if [${DEBUG} == 'true'] then
+if [${DEBUG} == "true"] then
     read -p "Next step [yes|no]? " next
-    if [$next != 'yes'] then 
+    if [$next != "yes"] then 
         exit
     fi
 fi
@@ -28,9 +28,9 @@ echo "Step 0: Update and install packages"
 sudo apt update
 sudo apt -y install git net-tools python3-pip python3-dev python3-venv libpq-dev postgresql postgresql-contrib nginx curl
 
-if [${DEBUG} == 'true'] then
+if [${DEBUG} == "true"] then
     read -p "Next step [yes|no]? " next
-    if [$next != 'yes'] then 
+    if [$next != "yes"] then 
         exit
     fi
 fi
@@ -45,9 +45,9 @@ ALTER ROLE ${DB_USER} SET timezone TO 'UTC';
 GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};
 EOF
 
-if [${DEBUG} == 'true'] then
+if [${DEBUG} == "true"] then
     read -p "Next step [yes|no]? " next
-    if [$next != 'yes'] then 
+    if [$next != "yes"] then 
         exit
     fi
 fi
@@ -58,9 +58,11 @@ echo "Clean old project"
 rm -r ${DJANGO_PROJECT}
 git clone ${PROJECT_REPOSITORY}
 
-read -p "Next step [yes|no]? " next
-if [$next != 'yes'] then 
-    exit
+if [${DEBUG} == "true"] then
+    read -p "Next step [yes|no]? " next
+    if [$next != "yes"] then 
+        exit
+    fi
 fi
 
 echo "Step 3: Create and activate virtual environment, install requered packages, migrate database"
@@ -74,9 +76,9 @@ python manage.py collectstatic
 python manage.py createsuperuser --noinput
 cd ${HOME}
 
-if [${DEBUG} == 'true'] then
+if [${DEBUG} == "true"] then
     read -p "Next step [yes|no]? " next
-    if [$next != 'yes'] then 
+    if [$next != "yes"] then 
         exit
     fi
 fi
@@ -126,9 +128,9 @@ sudo systemctl status gunicorn
 curl --unix-socket /run/gunicorn.sock localhost
 sudo systemctl status gunicorn
 
-if [${DEBUG} == 'true'] then
+if [${DEBUG} == "true"] then
     read -p "Next step [yes|no]? " next
-    if [$next != 'yes'] then 
+    if [$next != "yes"] then 
         exit
     fi
 fi
