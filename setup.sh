@@ -27,18 +27,11 @@ askContinue() {
     fi
 }
 
-askContinue
-
 echo "Step 0: Update and install packages"
 sudo apt update
 sudo apt -y install git net-tools python3-pip python3-dev python3-venv libpq-dev postgresql postgresql-contrib nginx curl
 
-if [${DEBUG} == "true"] then
-    read -p "Next step [yes|no]? " next
-    if [$next != "yes"] then 
-        exit
-    fi
-fi
+askContinue
 
 echo "Step 1: Create database and user $DB_USER to access postgres"
 sudo -u postgres psql<<EOF
