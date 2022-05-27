@@ -17,9 +17,11 @@ export DJANGO_SUPERUSER_EMAIL=admin@mail.com
 
 DEBUG=true
 askContinue() {
-    if [ "${DEBUG}" == "true" ] then
+    if [ "${DEBUG}" == "true" ];
+    then
         read -p "Next step [yes|no]? " next
-        if [ "$next" != "yes" ] then 
+        if [ "$next" != "yes" ];
+        then 
             exit
         fi
     fi
