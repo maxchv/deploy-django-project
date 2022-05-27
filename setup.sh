@@ -1,41 +1,120 @@
-#!/bin/bash
+#!/bin/bash -x
 
-echo "Step 0: Update and install packages"
-sudo apt -y update
-sudo apt -y install python3-pip python3-dev python3-venv libpq-dev postgresql postgresql-contrib nginx curl
+echo "Setup variables"
 
-echo "Step 1: Create database and user to access postgres"
-sudo -u postgres psql<<EOF
-CREATE USER dbuser WITH ENCRYPTED PASSWORD 'django';
-CREATE DATABASE djangodb WITH OWNER=dbuser;
-ALTER ROLE dbuser SET client_encoding TO 'utf8';
-ALTER ROLE dbuser SET default_transaction_isolation TO 'read committed';
-ALTER ROLE dbuser SET timezone TO 'UTC';
-GRANT ALL PRIVILEGES ON DATABASE djangodb TO dbuser;
-EOF
+DB_USER=dbuser
+DB_PASS=django
+DB_NAME=djangodb
 
-echo "Step 2: Create venv install django and create project, migrate database"
-mkdir djangoproject
-cd djangoproject
-python3 -m venv venv
-. venv/bin/activate
-pip install django psycopg2-binary
-django-admin startproject djangoproject .
-cp -f ../configs/settings.py djangoproject
-python manage.py makemigrations
-python manage.py migrate
-python manage.py collectstatic
+PROJECT_REPOSITORY=https://github.com/maxchv/DemoDjangoProject
+DJANGO_PROJECT=`basename ${PROJECT_REPOSITORY}`
+
+IP=`curl http://checkip.amazonaws.com`
+
 export DJANGO_SUPERUSER_USERNAME=admin
 export DJANGO_SUPERUSER_PASSWORD=admin
 export DJANGO_SUPERUSER_EMAIL=admin@mail.com
-python manage.py createsuperuser --noinput
-cd ..
 
-echo "Step 3: Setup gunicorn"
-pip install gunicorn
+DEBUG=true
+
+if [${DEBUG} == 'true'] then
+    read -p "Next step [yes|no]? " next
+    if [$next != 'yes'] then 
+        exit
+    fi
+fi
+
+echo "Step 0: Update and install packages"
+sudo apt update
+sudo apt -y install git net-tools python3-pip python3-dev python3-venv libpq-dev postgresql postgresql-contrib nginx curl
+
+if [${DEBUG} == 'true'] then
+    read -p "Next step [yes|no]? " next
+    if [$next != 'yes'] then 
+        exit
+    fi
+fi
+
+echo "Step 1: Create database and user $DB_USER to access postgres"
+sudo -u postgres psql<<EOF
+CREATE USER ${DB_USER} WITH ENCRYPTED PASSWORD '${DB_PASS}';
+CREATE DATABASE ${DB_NAME} WITH OWNER=${DB_USER};
+ALTER ROLE ${DB_USER} SET client_encoding TO 'utf8';
+ALTER ROLE ${DB_USER} SET default_transaction_isolation TO 'read committed';
+ALTER ROLE ${DB_USER} SET timezone TO 'UTC';
+GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};
+EOF
+
+if [${DEBUG} == 'true'] then
+    read -p "Next step [yes|no]? " next
+    if [$next != 'yes'] then 
+        exit
+    fi
+fi
+
+echo "Step 2: Clone project from git"
+cd ${HOME}
+echo "Clean old project"
+rm -r ${DJANGO_PROJECT}
+git clone ${PROJECT_REPOSITORY}
+
+read -p "Next step [yes|no]? " next
+if [$next != 'yes'] then 
+    exit
+fi
+
+echo "Step 3: Create and activate virtual environment, install requered packages, migrate database"
+cd ${DJANGO_PROJECT}
+python3 -m venv venv
+. ./venv/bin/activate
+pip install -r requirements.txt
+python manage.py makemigrations
+python manage.py migrate
+python manage.py collectstatic
+python manage.py createsuperuser --noinput
+cd ${HOME}
+
+if [${DEBUG} == 'true'] then
+    read -p "Next step [yes|no]? " next
+    if [$next != 'yes'] then 
+        exit
+    fi
+fi
+
+echo "Step 4: Setup gunicorn"
+# pip install gunicorn
 # gunicorn -w 3 --bind 0.0.0.0:8000 djangoproject.wsgi
-sudo cp -f ./configs/gunicorn.socket  /etc/systemd/system/gunicorn.socket
-sudo cp -f ./configs/gunicorn.service /etc/systemd/system/gunicorn.service
+# sudo cp -f ./configs/gunicorn.socket  /etc/systemd/system/gunicorn.socket
+sudo cat<<EOF >> /etc/systemd/system/gunicorn.socket
+[Unit]
+Description=gunicorn socket
+
+[Socket]
+ListenStream=/run/gunicorn.sock
+
+[Install]
+WantedBy=sockets.target
+EOF
+#sudo cp -f ./configs/gunicorn.service /etc/systemd/system/gunicorn.service
+sudo cat<<EOF >> /etc/systemd/system/gunicorn.service
+[Unit]
+Description=gunicorn daemon
+Requires=gunicorn.socket
+After=network.target
+
+[Service]
+User=${USER}
+Group=www-data
+WorkingDirectory=${HOME}/${DJANGO_PROJECT}
+ExecStart=${HOME}/${DJANGO_PROJECT}/venv/bin/gunicorn \
+          --access-logfile - \
+          --workers 3 \
+          --bind unix:/run/gunicorn.sock \
+          ${DJANGO_PROJECT}.wsgi:application
+
+[Install]
+WantedBy=multi-user.target
+EOF
 sudo systemctl start gunicorn.socket
 sudo systemctl enable gunicorn.socket
 sudo systemctl status gunicorn.socket
@@ -47,8 +126,31 @@ sudo systemctl status gunicorn
 curl --unix-socket /run/gunicorn.sock localhost
 sudo systemctl status gunicorn
 
-echo "Step 4: Setup nginx"
-sudo cp -f ./configs/myproject  /etc/nginx/sites-available/myproject
+if [${DEBUG} == 'true'] then
+    read -p "Next step [yes|no]? " next
+    if [$next != 'yes'] then 
+        exit
+    fi
+fi
+
+echo "Step 5: Setup nginx"
+#sudo cp -f ./configs/myproject  /etc/nginx/sites-available/myproject
+sudo cat<<EOF >> /etc/nginx/sites-available/myproject
+server {
+    listen 80;
+    server_name ${IP};
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location /static/ {
+        root /var/www/html;
+    }
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/run/gunicorn.sock;
+    }
+}
+EOF
 sudo ln -s /etc/nginx/sites-available/myproject /etc/nginx/sites-enabled
 sudo nginx -t
 sudo systemctl restart nginx
