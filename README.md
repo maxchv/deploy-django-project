@@ -3,10 +3,10 @@
 To install basic django project with postgresql, nginx and gunicorn you should simple run the script `setup.sh`.
 
 ```bash
-$ git clone [https://github.com/maxchv/deploy-django-project](https://github.com/maxchv/deploy-django-project)
+$ git clone https://github.com/maxchv/deploy-django-project
 $ cd deploy-django-project
 $ . setup.sh
-$ Enter valid path to git repository: [https://github.com/maxchv/DemoDjangoProject](https://github.com/maxchv/DemoDjangoProject)
+$ Enter valid path to git repository: https://github.com/maxchv/DemoDjangoProject
 ```
 
 ![Screen record installation](screen/install.gif)
